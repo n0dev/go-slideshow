@@ -25,7 +25,7 @@ Just run `goslideshow` indicating a file or a folder in parameter.
 - [ ] Build with Travis CI
 - [ ] Platform independent
 - [ ] Re-sizable window
-- [ ] Image should have its size otherwise size of screen
+- [x] Image should have its size otherwise size of screen
 - [ ] Add rotate function with auto-save
 - [ ] Auto slideshow for a directory with configurable timer
 - [ ] Folder tree
