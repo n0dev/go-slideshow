@@ -8,3 +8,13 @@ func Mod(a int, b int) int {
 	}
 	return rem
 }
+
+// StringInSlice returns true if the string a is in slice, else false
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}

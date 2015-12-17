@@ -22,3 +22,18 @@ func TestMod(t *testing.T) {
 		t.Errorf("Error")
 	}
 }
+
+func TestStringInSlice(t *testing.T) {
+	if StringInSlice("a", []string{"a", "b"}) == false {
+		t.Errorf("Error")
+	}
+	if StringInSlice("a", []string{"b", "c"}) == true {
+		t.Errorf("Error")
+	}
+	if StringInSlice("", []string{"a", "b"}) == true {
+		t.Errorf("Error")
+	}
+	if StringInSlice("a bigger test", []string{"a bigger test", "hehe"}) == false {
+		t.Errorf("Error")
+	}
+}

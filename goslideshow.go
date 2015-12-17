@@ -5,15 +5,18 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 
 	"github.com/n0dev/GoSlideshow/utils"
 
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/sdl_image"
 )
 
 var winTitle = "GoSlideshow"
 var winWidth, winHeight int = 800, 600
 var imageList []string
+var validExtensions = []string{".bmp", ".jpg", ".png", ".gif", ".tif", ".tga"}
 
 func run(imageName string) int {
 	runtime.LockOSThread()
@@ -41,7 +44,7 @@ func run(imageName string) int {
 	}
 	defer renderer.Destroy()
 
-	image, err = sdl.LoadBMP(imageName)
+	image, err = img.Load(imageName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load BMP: %s\n", err)
 		return 3
@@ -73,7 +76,7 @@ func run(imageName string) int {
 		}
 	}
 
-	window.SetTitle(winTitle + " - " + filepath.Base(imageList[currentIndex]))
+	window.SetTitle(winTitle + " - " + strconv.Itoa(currentIndex+1) + "/" + strconv.Itoa(len(imageList)) + " - " + filepath.Base(imageList[currentIndex]))
 
 	running = true
 	for running {
@@ -103,12 +106,11 @@ func run(imageName string) int {
 				}
 
 				//fmt.Printf("index: %d\timage:%s\n", currentIndex, imageList[currentIndex])
+				window.SetTitle(winTitle + " - " + strconv.Itoa(currentIndex+1) + "/" + strconv.Itoa(len(imageList)) + " - " + filepath.Base(imageList[currentIndex]))
 
-				window.SetTitle(winTitle + " - " + filepath.Base(imageList[currentIndex]))
-
-				image, err = sdl.LoadBMP(imageList[currentIndex])
+				image, err = img.Load(imageList[currentIndex])
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to load BMP: %s\n", err)
+					fmt.Fprintf(os.Stderr, "Failed to load: %s\n", err)
 					return 3
 				}
 				defer image.Free()
@@ -134,7 +136,7 @@ func run(imageName string) int {
 }
 
 func visit(path string, f os.FileInfo, err error) error {
-	if filepath.Ext(path) == ".bmp" {
+	if utils.StringInSlice(filepath.Ext(path), validExtensions) {
 		fmt.Printf("Add: %s\n", path)
 		imageList = append(imageList, path)
 	}
