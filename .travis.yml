@@ -8,6 +8,7 @@ env:
     - LD_LIBRARY_PATH: /usr/local/lib
 
 install:
+  - sudo add-apt-repository ppa:team-xbmc/ppa -y
   - sudo apt-get update
   - sudo apt-get install libsdl-dev libsdl-image-dev
   - go get -v github.com/veandco/go-sdl2/sdl{,_image}
