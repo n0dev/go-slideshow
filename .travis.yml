@@ -10,5 +10,5 @@ env:
 install:
   - sudo add-apt-repository ppa:team-xbmc/ppa -y
   - sudo apt-get update
-  - sudo apt-get install libsdl-dev libsdl-image-dev
+  - sudo apt-get install libsdl2-dev libsdl2-image-dev
   - go get -v github.com/veandco/go-sdl2/sdl{,_image}
