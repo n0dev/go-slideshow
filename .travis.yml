@@ -3,8 +3,11 @@ language: go
 go:
   - 1.5
 
+env:
+  global:
+    - LD_LIBRARY_PATH: /usr/local/lib
+
 install:
   - sudo apt-get update
-  - sudo apt-get install libsdl2-dev libsdl2-image-dev
-  - go get github.com/veandco/go-sdl2/sdl
-  - go get github.com/veandco/go-sdl2/sdl_image
+  - sudo apt-get install libsdl-dev libsdl-image-dev
+  - go get -v github.com/veandco/go-sdl2/sdl{,_image}
