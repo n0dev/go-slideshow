@@ -4,5 +4,5 @@ go:
   - tip
 
 install:
-  - github.com/veandco/go-sdl2/sdl
-  - github.com/veandco/go-sdl2/sdl_image
+  - go get github.com/veandco/go-sdl2/sdl
+  - go get github.com/veandco/go-sdl2/sdl_image
