@@ -30,7 +30,7 @@ Just run `goslideshow` indicating a file or a folder in parameter.
 
 - [ ] Properly refacto the code sources
 - [ ] Add tests & coverage
-- [ ] Build with Travis CI
+- [ ] Test with Travis CI
 - [ ] Platform independent
 - [ ] Add rotate function with auto-save
 - [ ] Auto slideshow for a directory with configurable timer

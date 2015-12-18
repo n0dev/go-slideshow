@@ -1,8 +1,9 @@
 language: go
 
 go:
-  - tip
+  - 1.5
 
 install:
+  - sudo apt-get install libsdl2-dev libsdl2-image-dev
   - go get github.com/veandco/go-sdl2/sdl
   - go get github.com/veandco/go-sdl2/sdl_image
