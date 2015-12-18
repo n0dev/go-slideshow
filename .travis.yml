@@ -4,8 +4,8 @@ go:
   - 1.5
 
 before_install:
-- uname -a
-- sudo apt-add-repository --yes ppa:zoogie/sdl2-snapshots # libsdl2
+  - uname -a
+  - sudo apt-add-repository --yes ppa:zoogie/sdl2-snapshots # libsdl2
 
 install:
   - sudo apt-get update

@@ -1,5 +1,3 @@
-![build status](https://travis-ci.org/n0dev/GoSlideshow.svg?branch=master)
-
 # GoSlideshow
 
 ![Build Status](https://travis-ci.org/n0dev/GoSlideshow.svg?branch=master)
