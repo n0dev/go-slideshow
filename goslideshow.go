@@ -85,6 +85,7 @@ func run(imageName string) int {
 	var renderer *sdl.Renderer
 	var event sdl.Event
 	var running bool
+	var src, dst sdl.Rect
 	var err error
 	var flags uint32 = sdl.WINDOW_SHOWN | sdl.WINDOW_RESIZABLE | sdl.WINDOW_ALLOW_HIGHDPI
 
@@ -125,8 +126,6 @@ func run(imageName string) int {
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_RESIZED {
 				window.SetSize(int(t.Data1), int(t.Data2))
-
-				var src, dst sdl.Rect
 
 				// Display information of the image
 				wWidth, wHeight := window.GetSize()

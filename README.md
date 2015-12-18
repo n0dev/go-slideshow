@@ -18,14 +18,20 @@ To install just follow the steps:
 
 Just run `goslideshow` indicating a file or a folder in parameter.
 
+
+| Keys          | Are                |
+| ------------- | ------------------ |
+| `🠊`           | Next picture       |
+| `🠈`           | Previous picture   |
+| `f`           | Toggle fullscreen  |
+
+
 ### Todo
 
 - [ ] Properly refacto the code sources
 - [ ] Add tests & coverage
 - [ ] Build with Travis CI
 - [ ] Platform independent
-- [ ] Re-sizable window
-- [x] Image should have its size otherwise size of screen
 - [ ] Add rotate function with auto-save
 - [ ] Auto slideshow for a directory with configurable timer
 - [ ] Folder tree
