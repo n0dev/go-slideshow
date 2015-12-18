@@ -3,11 +3,11 @@ language: go
 go:
   - 1.5
 
-env:
-  global:
-    - LD_LIBRARY_PATH: /usr/local/lib
+before_install:
+- uname -a
+- sudo apt-add-repository --yes ppa:zoogie/sdl2-snapshots # libsdl2
 
 install:
   - sudo apt-get update
-  - sudo apt-get install libsdl-dev libsdl-image-dev
+  - sudo apt-get install libsdl2-dev libsdl2-image-dev
   - go get -v github.com/veandco/go-sdl2/sdl{,_image}
