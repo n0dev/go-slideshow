@@ -1,0 +1,8 @@
+language: go
+
+go:
+  - tip
+
+install:
+  - github.com/veandco/go-sdl2/sdl
+  - github.com/veandco/go-sdl2/sdl_image
