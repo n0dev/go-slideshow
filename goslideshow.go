@@ -43,9 +43,10 @@ func rotateImage(imagePath string, rotation Rotation) {
 	}
 }
 
+var image *sdl.Surface
+var texture *sdl.Texture
+
 func loadImage(window *sdl.Window, renderer *sdl.Renderer, imagePath string) {
-	var image *sdl.Surface
-	var texture *sdl.Texture
 	var src, dst sdl.Rect
 	var err error
 
@@ -53,13 +54,13 @@ func loadImage(window *sdl.Window, renderer *sdl.Renderer, imagePath string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load: %s\n", err)
 	}
-	defer image.Free()
+	//defer image.Free()
 
 	texture, err = renderer.CreateTextureFromSurface(image)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create texture: %s\n", err)
 	}
-	defer texture.Destroy()
+	//defer texture.Destroy()
 
 	// Display information of the image
 	wWidth, wHeight := window.GetSize()
@@ -73,8 +74,13 @@ func loadImage(window *sdl.Window, renderer *sdl.Renderer, imagePath string) {
 	renderer.Present()
 }
 
-func run(imageName string) int {
+func init() {
 	runtime.LockOSThread()
+}
+
+var fullscreen = false
+
+func run(imageName string) int {
 	var window *sdl.Window
 	var renderer *sdl.Renderer
 	var event sdl.Event
@@ -111,39 +117,57 @@ func run(imageName string) int {
 
 	running = true
 	for running {
-		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch t := event.(type) {
-			case *sdl.QuitEvent:
-				running = false
-			case *sdl.WindowEvent:
-				if t.Event == sdl.WINDOWEVENT_RESIZED {
-					//var wWidth = t.Data1
-					//var wHeigth = t.Data2
-					//window.SetSize(t.Data1, t.Data2)
-					fmt.Printf("%dx%d\n", t.Data1, t.Data2)
-					window.SetSize(int(t.Data1), int(t.Data2))
-					/*renderer.Clear()
-					renderer.Present()*/
-				}
+		event = sdl.WaitEvent()
+		switch t := event.(type) {
+		case *sdl.QuitEvent:
+			running = false
 
-			case *sdl.KeyDownEvent:
+		case *sdl.WindowEvent:
+			if t.Event == sdl.WINDOWEVENT_RESIZED {
+				window.SetSize(int(t.Data1), int(t.Data2))
 
-				// Get next or previous image
-				if t.Repeat == 0 {
-					if t.Keysym.Sym == sdl.K_LEFT {
-						currentIndex = utils.Mod((currentIndex - 1), len(imageList))
-					} else if t.Keysym.Sym == sdl.K_RIGHT {
-						currentIndex = utils.Mod((currentIndex + 1), len(imageList))
-					} else if t.Keysym.Sym == sdl.K_PAGEUP {
-						rotateImage(imageList[currentIndex], CounterClockwise)
-					} else if t.Keysym.Sym == sdl.K_PAGEDOWN {
-						rotateImage(imageList[currentIndex], Clockwise)
-					}
-				}
+				var src, dst sdl.Rect
 
-				setTitle(window, currentIndex+1, len(imageList), imageList[currentIndex])
-				loadImage(window, renderer, imageList[currentIndex])
+				// Display information of the image
+				wWidth, wHeight := window.GetSize()
+
+				src = sdl.Rect{X: 0, Y: 0, W: image.W, H: image.H}
+				fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(image.W), uint32(image.H))
+				dst = sdl.Rect{X: int32(wWidth/2 - int(fitWidth)/2), Y: int32(wHeight/2 - int(fitHeight)/2), W: int32(fitWidth), H: int32(fitHeight)}
+
+				renderer.Clear()
+				renderer.Copy(texture, &src, &dst)
+				renderer.Present()
 			}
+
+		case *sdl.KeyDownEvent:
+
+			// Get next or previous image
+			if t.Repeat == 0 {
+				if t.Keysym.Sym == sdl.K_LEFT {
+					currentIndex = utils.Mod((currentIndex - 1), len(imageList))
+				} else if t.Keysym.Sym == sdl.K_RIGHT {
+					currentIndex = utils.Mod((currentIndex + 1), len(imageList))
+				} else if t.Keysym.Sym == sdl.K_PAGEUP {
+					rotateImage(imageList[currentIndex], CounterClockwise)
+				} else if t.Keysym.Sym == sdl.K_PAGEDOWN {
+					rotateImage(imageList[currentIndex], Clockwise)
+				} else if t.Keysym.Sym == 102 { // F
+
+					if fullscreen {
+						window.SetFullscreen(0)
+					} else {
+						// Go fullscreen
+						window.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
+					}
+					fullscreen = !fullscreen
+				} else {
+					fmt.Printf("%d\n", t.Keysym.Sym)
+				}
+			}
+
+			setTitle(window, currentIndex+1, len(imageList), imageList[currentIndex])
+			loadImage(window, renderer, imageList[currentIndex])
 		}
 	}
 

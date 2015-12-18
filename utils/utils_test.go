@@ -23,6 +23,14 @@ func TestMod(t *testing.T) {
 	}
 }
 
+// from fib_test.go
+func BenchmarkMod(b *testing.B) {
+	// run the Fib function b.N times
+	for n := 0; n < b.N; n++ {
+		Mod(0, 15)
+	}
+}
+
 func TestStringInSlice(t *testing.T) {
 	if StringInSlice("a", []string{"a", "b"}) == false {
 		t.Errorf("Error")
