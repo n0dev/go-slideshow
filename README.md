@@ -1,5 +1,7 @@
 # GoSlideshow
 
+![Build Status](https://travis-ci.org/n0dev/GoSlideshow.svg?branch=master)
+
 Simple cross-platform (just tested on Linux yet) slideshow written in go.
 
 **This is not ready for use yet.**
