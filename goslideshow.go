@@ -4,7 +4,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/n0dev/GoSlideshow/display"
+	"github.com/n0dev/GoSlideshow/core"
 	"github.com/n0dev/GoSlideshow/logger"
 )
 
@@ -35,7 +35,7 @@ func main() {
 		if _, err := os.Stat(inputParam); err != nil {
 			logger.Error(inputParam + " does not exist")
 		} else {
-			os.Exit(display.Run(inputParam, *fullScreen, *isSlideshow))
+			os.Exit(core.Run(inputParam, *fullScreen, *isSlideshow))
 		}
 
 	} else {

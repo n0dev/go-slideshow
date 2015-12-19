@@ -1,4 +1,4 @@
-package display
+package core
 
 import (
 	"fmt"
@@ -22,48 +22,30 @@ const (
 )
 
 // Information about the display window
-type displayInfo struct {
+type winInfo struct {
 	window     *sdl.Window
 	renderer   *sdl.Renderer
 	imageList  []string
 	fullscreen bool
 }
 
-type imageInfo struct {
+type imgInfo struct {
 	path    string
 	surface *sdl.Surface
 	texture *sdl.Texture
 }
 
-var image imageInfo
+var image imgInfo
 
-func (win *displayInfo) addPicture(path string, f os.FileInfo, err error) error {
+func (win *winInfo) addPicture(path string, f os.FileInfo, err error) error {
 	if utils.StringInSlice(strings.ToLower(filepath.Ext(path)), validExtensions) {
 		win.imageList = append(win.imageList, path)
 	}
 	return nil
 }
 
-func (win *displayInfo) setTitle(position int, total int, path string) {
+func (win *winInfo) setTitle(position int, total int, path string) {
 	win.window.SetTitle(winTitle + " - " + strconv.Itoa(position) + "/" + strconv.Itoa(total) + " - " + filepath.Base(path))
-}
-
-// Rotation test
-type Rotation int
-
-//
-const (
-	Clockwise Rotation = iota
-	CounterClockwise
-)
-
-func rotateImage(imagePath string, rotation Rotation) {
-	switch rotation {
-	case Clockwise:
-		fmt.Println("Clockwise rotation")
-	case CounterClockwise:
-		fmt.Println("CounterClockwise rotation")
-	}
 }
 
 func loadImage(window *sdl.Window, renderer *sdl.Renderer, imagePath string) {
@@ -98,7 +80,7 @@ func init() {
 	runtime.LockOSThread()
 }
 
-var window displayInfo
+var window winInfo
 
 // Run to launch the app
 func Run(inputParam string, fullScreen bool, slideshow bool) int {
