@@ -27,13 +27,6 @@ Just run `goslideshow` indicating a file or a folder in parameter.
 | `🠈`           | Previous picture   |
 | `f`           | Toggle fullscreen  |
 
+### License
 
-### Todo
-
-- [ ] Properly refacto the code sources
-- [ ] Add tests & coverage
-- [ ] Test with Travis CI
-- [ ] Platform independent
-- [ ] Add rotate function with auto-save
-- [ ] Auto slideshow for a directory with configurable timer
-- [ ] Folder tree
+Copyright (c) 2015 Nicolas Hess nicolas.hess@gmail.com goslideshow is released under a BSD style license.
