@@ -35,7 +35,7 @@ type imgInfo struct {
 	texture *sdl.Texture
 }
 
-var image imgInfo
+var curImage imgInfo
 
 func (win *winInfo) addPicture(path string, f os.FileInfo, err error) error {
 	if utils.StringInSlice(strings.ToLower(filepath.Ext(path)), validExtensions) {
@@ -52,13 +52,13 @@ func loadImage(window *sdl.Window, renderer *sdl.Renderer, imagePath string) {
 	var src, dst sdl.Rect
 	var err error
 
-	image.surface, err = img.Load(imagePath)
+	curImage.surface, err = img.Load(imagePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load: %s\n", err)
 	}
 	//defer image.Free()
 
-	image.texture, err = renderer.CreateTextureFromSurface(image.surface)
+	curImage.texture, err = renderer.CreateTextureFromSurface(curImage.surface)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create texture: %s\n", err)
 	}
@@ -67,12 +67,12 @@ func loadImage(window *sdl.Window, renderer *sdl.Renderer, imagePath string) {
 	// Display information of the image
 	wWidth, wHeight := window.GetSize()
 
-	src = sdl.Rect{X: 0, Y: 0, W: image.surface.W, H: image.surface.H}
-	fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(image.surface.W), uint32(image.surface.H))
+	src = sdl.Rect{X: 0, Y: 0, W: curImage.surface.W, H: curImage.surface.H}
+	fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(curImage.surface.W), uint32(curImage.surface.H))
 	dst = sdl.Rect{X: int32(wWidth/2 - int(fitWidth)/2), Y: int32(wHeight/2 - int(fitHeight)/2), W: int32(fitWidth), H: int32(fitHeight)}
 
 	renderer.Clear()
-	renderer.Copy(image.texture, &src, &dst)
+	renderer.Copy(curImage.texture, &src, &dst)
 	renderer.Present()
 }
 
@@ -156,12 +156,12 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 				// Display information of the image
 				wWidth, wHeight := window.window.GetSize()
 
-				src = sdl.Rect{X: 0, Y: 0, W: image.surface.W, H: image.surface.H}
-				fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(image.surface.W), uint32(image.surface.H))
+				src = sdl.Rect{X: 0, Y: 0, W: curImage.surface.W, H: curImage.surface.H}
+				fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(curImage.surface.W), uint32(curImage.surface.H))
 				dst = sdl.Rect{X: int32(wWidth/2 - int(fitWidth)/2), Y: int32(wHeight/2 - int(fitHeight)/2), W: int32(fitWidth), H: int32(fitHeight)}
 
 				window.renderer.Clear()
-				window.renderer.Copy(image.texture, &src, &dst)
+				window.renderer.Copy(curImage.texture, &src, &dst)
 				window.renderer.Present()
 			}
 
@@ -174,9 +174,13 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 				} else if t.Keysym.Sym == sdl.K_RIGHT {
 					currentIndex = utils.Mod((currentIndex + 1), len(window.imageList))
 				} else if t.Keysym.Sym == sdl.K_PAGEUP {
-					rotateImage(window.imageList[currentIndex], CounterClockwise)
+					if err := RotateImage(window.imageList[currentIndex], CounterClockwise); err != nil {
+						logger.Warning(err.Error())
+					}
 				} else if t.Keysym.Sym == sdl.K_PAGEDOWN {
-					rotateImage(window.imageList[currentIndex], Clockwise)
+					if err := RotateImage(window.imageList[currentIndex], Clockwise); err != nil {
+						logger.Warning(err.Error())
+					}
 				} else if t.Keysym.Sym == 102 { // F
 
 					if window.fullscreen {
