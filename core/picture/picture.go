@@ -1,19 +1,15 @@
-package core
+package picture
 
 import (
 	"errors"
 	"image"
-	"os"
-
-	// Import image implementation
-
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"os"
 
-	// Import image implementation
-	_ "golang.org/x/image/bmp"
-	_ "golang.org/x/image/tiff"
+	"golang.org/x/image/bmp"
+	"golang.org/x/image/tiff"
 )
 
 // Format f
@@ -59,11 +55,10 @@ func Open(imagePath string) (*Picture, error) {
 
 		f, ok := formats[format]
 		if !ok {
-			return nil, errors.New("unsupported format")
+			return nil, errors.New("format " + format + " is not supported")
 		}
 
 		return &Picture{path: imagePath, format: f, img: src}, nil
-
 	}
 
 	return nil, err
@@ -87,7 +82,9 @@ func (pic *Picture) Save(img *image.Image) error {
 	case GIF:
 		return gif.Encode(f, *img, &gif.Options{NumColors: 256})
 	case TIFF:
+		return tiff.Encode(f, *img, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 	case BMP:
+		return bmp.Encode(f, *img)
 	}
 
 	return errors.New("unsupported format")
