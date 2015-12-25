@@ -19,6 +19,19 @@ func StringInSlice(a string, list []string) bool {
 	return false
 }
 
+// IntList for an integer list
+type IntList []int
+
+// Find returns true if the integer is in list
+func (l *IntList) Find(i int) bool {
+	for _, a := range *l {
+		if a == i {
+			return true
+		}
+	}
+	return false
+}
+
 // ComputeFitImage returns Width and Height for the image to fit in the window, keeping the actual ratio
 func ComputeFitImage(winWidth, winHeight, imageWidth, imageHeight uint32) (uint32, uint32) {
 

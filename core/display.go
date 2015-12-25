@@ -29,21 +29,30 @@ type winInfo struct {
 	window     *sdl.Window
 	renderer   *sdl.Renderer
 	font       *ttf.Font
-	imageList  []string
 	fullscreen bool
 }
 
 type imgInfo struct {
 	path    string
-	surface *sdl.Surface
+	H       int32
+	W       int32
 	texture *sdl.Texture
 }
 
-var curImage imgInfo
+type slideshowInfo struct {
+	list    []imgInfo
+	current int
+}
+
+var slide slideshowInfo
+
+func curImg() *imgInfo {
+	return &slide.list[slide.current]
+}
 
 func (win *winInfo) addPicture(path string, f os.FileInfo, err error) error {
 	if utils.StringInSlice(strings.ToLower(filepath.Ext(path)), validExtensions) {
-		win.imageList = append(win.imageList, path)
+		slide.list = append(slide.list, imgInfo{path, 0, 0, nil})
 	}
 	return nil
 }
@@ -71,43 +80,89 @@ func (win *winInfo) setText(message string) {
 	}
 }
 
-func (win *winInfo) loadImage(imagePath string) {
-	var src, dst sdl.Rect
-	var err error
+func loadImg(win *winInfo, index int) {
+	if slide.list[index].texture == nil {
+		var err error
+		var surface *sdl.Surface
 
-	curImage.surface, err = img.Load(imagePath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load: %s\n", err)
+		logger.Trace("load " + slide.list[index].path)
+
+		surface, err = img.Load(slide.list[index].path)
+		if err != nil {
+			fmt.Printf("Failed to load: %s\n", err)
+		}
+		defer surface.Free()
+
+		slide.list[index].H = surface.H
+		slide.list[index].W = surface.W
+
+		slide.list[index].texture, err = win.renderer.CreateTextureFromSurface(surface)
+		if err != nil {
+			fmt.Printf("Failed to create texture: %s\n", err)
+		}
 	}
-	//defer image.Free()
-
-	curImage.texture, err = win.renderer.CreateTextureFromSurface(curImage.surface)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create texture: %s\n", err)
-	}
-	//defer texture.Destroy()
-
-	// Display information of the image
-	wWidth, wHeight := win.window.GetSize()
-
-	src = sdl.Rect{X: 0, Y: 0, W: curImage.surface.W, H: curImage.surface.H}
-	fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(curImage.surface.W), uint32(curImage.surface.H))
-	dst = sdl.Rect{X: int32(wWidth/2 - int(fitWidth)/2), Y: int32(wHeight/2 - int(fitHeight)/2), W: int32(fitWidth), H: int32(fitHeight)}
-
-	win.renderer.Clear()
-	win.renderer.Copy(curImage.texture, &src, &dst)
-	win.setText(filepath.Base(imagePath))
-	win.renderer.Present()
-
-	/* TEST */
-	fImg, err := os.Open(imagePath)
-	defer fImg.Close()
-	if err == nil {
-		exif.Read(fImg)
-	}
-
 }
 
+func resetImg(index int) {
+	if slide.list[index].texture != nil {
+		slide.list[index].texture.Destroy()
+		slide.list[index].texture = nil
+	}
+}
+
+func (win *winInfo) loadAndFreeAround() {
+	p1 := utils.Mod(slide.current-1, len(slide.list))
+	p2 := utils.Mod(slide.current-1, len(slide.list))
+	n1 := utils.Mod(slide.current+1, len(slide.list))
+	n2 := utils.Mod(slide.current+2, len(slide.list))
+	refresh := utils.IntList{p1, p2, n1, n2}
+
+	// preload the previous and next two images
+	for _, idx := range refresh {
+		loadImg(win, idx)
+	}
+
+	d1 := utils.Mod(slide.current-3, len(slide.list))
+	d2 := utils.Mod(slide.current+3, len(slide.list))
+	if !refresh.Find(d1) {
+		resetImg(d1)
+	}
+	if !refresh.Find(d2) {
+		resetImg(d2)
+	}
+}
+
+func (win *winInfo) loadCurrentImage() {
+	var src, dst sdl.Rect
+
+	// load and display the current image
+	loadImg(win, slide.current)
+
+	// Display information of the image
+	ww, wh := win.window.GetSize()
+	src = sdl.Rect{X: 0, Y: 0, W: curImg().W, H: curImg().H}
+	iw, ih := utils.ComputeFitImage(uint32(ww), uint32(wh), uint32(curImg().W), uint32(curImg().H))
+	dst = sdl.Rect{X: int32(ww/2 - int(iw)/2), Y: int32(wh/2 - int(ih)/2), W: int32(iw), H: int32(ih)}
+
+	win.renderer.Clear()
+	win.renderer.Copy(curImg().texture, &src, &dst)
+	win.setText(filepath.Base(curImg().path))
+	win.renderer.Present()
+
+	// Preload and free images from the list
+	win.loadAndFreeAround()
+
+	/* TEST */
+	go func() {
+		fImg, err := os.Open(curImg().path)
+		defer fImg.Close()
+		if err == nil {
+			exif.Read(fImg)
+		}
+	}()
+}
+
+// Arrange that main.main runs on main thread.
 func init() {
 	runtime.LockOSThread()
 }
@@ -133,11 +188,11 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 	logger.Trace("Listing pictures in " + folderPath)
 	filepath.Walk(folderPath, window.addPicture)
 
-	if len(window.imageList) != 0 {
+	if len(slide.list) != 0 {
 
 		fileInformation, _ := os.Stat(inputParam)
 		if fileInformation.IsDir() {
-			imagePath, _ = filepath.Abs(window.imageList[0])
+			imagePath, _ = filepath.Abs(slide.list[0].path)
 		} else {
 			imagePath, _ = filepath.Abs(inputParam)
 		}
@@ -168,7 +223,7 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 		logger.Warning("Unable to load font")
 	}
 
-	window.renderer, err = sdl.CreateRenderer(window.window, -1, sdl.RENDERER_ACCELERATED)
+	window.renderer, err = sdl.CreateRenderer(window.window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_TARGETTEXTURE)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
 		return 2
@@ -176,17 +231,16 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 	defer window.renderer.Destroy()
 
 	// Positioning the current index in list
-	var currentIndex int
-	for i := range window.imageList {
-		if window.imageList[i] != imagePath {
-			currentIndex++
+	for i := range slide.list {
+		if slide.list[i].path != imagePath {
+			slide.current++
 		} else {
 			break
 		}
 	}
 
-	window.setTitle(currentIndex+1, len(window.imageList), window.imageList[currentIndex])
-	window.loadImage(window.imageList[currentIndex])
+	window.setTitle(slide.current+1, len(slide.list), curImg().path)
+	window.loadCurrentImage()
 
 	running = true
 	for running {
@@ -202,12 +256,12 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 				// Display information of the image
 				wWidth, wHeight := window.window.GetSize()
 
-				src = sdl.Rect{X: 0, Y: 0, W: curImage.surface.W, H: curImage.surface.H}
-				fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(curImage.surface.W), uint32(curImage.surface.H))
+				src = sdl.Rect{X: 0, Y: 0, W: curImg().W, H: curImg().H}
+				fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(curImg().W), uint32(curImg().H))
 				dst = sdl.Rect{X: int32(wWidth/2 - int(fitWidth)/2), Y: int32(wHeight/2 - int(fitHeight)/2), W: int32(fitWidth), H: int32(fitHeight)}
 
 				window.renderer.Clear()
-				window.renderer.Copy(curImage.texture, &src, &dst)
+				window.renderer.Copy(curImg().texture, &src, &dst)
 				window.renderer.Present()
 			}
 
@@ -216,15 +270,15 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 			// Get next or previous image
 			if t.Repeat == 0 {
 				if t.Keysym.Sym == sdl.K_LEFT {
-					currentIndex = utils.Mod((currentIndex - 1), len(window.imageList))
+					slide.current = utils.Mod((slide.current - 1), len(slide.list))
 				} else if t.Keysym.Sym == sdl.K_RIGHT {
-					currentIndex = utils.Mod((currentIndex + 1), len(window.imageList))
+					slide.current = utils.Mod((slide.current + 1), len(slide.list))
 				} else if t.Keysym.Sym == sdl.K_PAGEUP {
-					if err := picture.RotateImage(window.imageList[currentIndex], picture.CounterClockwise); err != nil {
+					if err := picture.RotateImage(curImg().path, picture.CounterClockwise); err != nil {
 						logger.Warning(err.Error())
 					}
 				} else if t.Keysym.Sym == sdl.K_PAGEDOWN {
-					if err := picture.RotateImage(window.imageList[currentIndex], picture.Clockwise); err != nil {
+					if err := picture.RotateImage(curImg().path, picture.Clockwise); err != nil {
 						logger.Warning(err.Error())
 					}
 				} else if t.Keysym.Sym == 102 { // F
@@ -236,13 +290,15 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 						window.window.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
 					}
 					window.fullscreen = !window.fullscreen
+				} else if t.Keysym.Sym == 105 { // I
+					// display image information
 				} else {
 					fmt.Printf("%d\n", t.Keysym.Sym)
 				}
 			}
 
-			window.setTitle(currentIndex+1, len(window.imageList), window.imageList[currentIndex])
-			window.loadImage(window.imageList[currentIndex])
+			window.setTitle(slide.current+1, len(slide.list), curImg().path)
+			window.loadCurrentImage()
 		}
 	}
 
