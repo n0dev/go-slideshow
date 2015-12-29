@@ -153,13 +153,9 @@ func (win *winInfo) loadCurrentImage() {
 	win.loadAndFreeAround()
 
 	/* TEST */
-	go func() {
-		fImg, err := os.Open(curImg().path)
-		defer fImg.Close()
-		if err == nil {
-			exif.Read(fImg)
-		}
-	}()
+	go func(path string) {
+		exif.Open(path)
+	}(curImg().path)
 }
 
 // Arrange that main.main runs on main thread.
@@ -250,7 +246,7 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 			running = false
 
 		case *sdl.WindowEvent:
-			if t.Event == sdl.WINDOWEVENT_RESIZED {
+			if t.Event == sdl.WINDOWEVENT_RESIZED || t.Event == sdl.WINDOWEVENT_EXPOSED {
 				window.window.SetSize(int(t.Data1), int(t.Data2))
 
 				// Display information of the image
@@ -292,6 +288,13 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 					window.fullscreen = !window.fullscreen
 				} else if t.Keysym.Sym == 105 { // I
 					// display image information
+				} else if t.Keysym.Sym == sdl.K_ESCAPE {
+
+					if window.fullscreen {
+						window.window.SetFullscreen(0)
+						window.fullscreen = false
+					}
+
 				} else {
 					fmt.Printf("%d\n", t.Keysym.Sym)
 				}
