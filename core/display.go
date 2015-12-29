@@ -26,10 +26,11 @@ const (
 
 // Information about the display window
 type winInfo struct {
-	window     *sdl.Window
-	renderer   *sdl.Renderer
-	font       *ttf.Font
-	fullscreen bool
+	window      *sdl.Window
+	renderer    *sdl.Renderer
+	font        *ttf.Font
+	fullscreen  bool
+	displayInfo bool
 }
 
 type imgInfo struct {
@@ -61,19 +62,27 @@ func (win *winInfo) setTitle(position int, total int, path string) {
 	win.window.SetTitle(winTitle + " - " + strconv.Itoa(position) + "/" + strconv.Itoa(total) + " - " + filepath.Base(path))
 }
 
-func (win *winInfo) setText(message string) {
+func (win *winInfo) displayPictureInfo() {
+
+	message := filepath.Base(curImg().path)
+
+	/* Display exif information */
+	go func(path string) {
+		exif.Open(path)
+	}(curImg().path)
 
 	black := sdl.Color{A: 0, B: 255, G: 255, R: 255}
+	white := sdl.Color{A: 0, B: 0, G: 0, R: 0}
 
-	if textSurface, err := win.font.RenderUTF8_Blended(message, black); err == nil {
-		texture, err := window.renderer.CreateTextureFromSurface(textSurface)
+	if textSurface, err := win.font.RenderUTF8_Shaded(message, black, white); err == nil {
+		texture, err := win.renderer.CreateTextureFromSurface(textSurface)
 		if err != nil {
 			fmt.Println(err)
 		}
 		textSurface.Free()
 
 		width := int32(len(message) * 8)
-		window.renderer.Copy(texture, nil, &sdl.Rect{X: 2, Y: 2, W: width, H: 16})
+		win.renderer.Copy(texture, nil, &sdl.Rect{X: 2, Y: 2, W: width, H: 16})
 		texture.Destroy()
 	} else {
 		logger.Warning("OMG")
@@ -146,16 +155,16 @@ func (win *winInfo) loadCurrentImage() {
 
 	win.renderer.Clear()
 	win.renderer.Copy(curImg().texture, &src, &dst)
-	win.setText(filepath.Base(curImg().path))
+	if window.displayInfo {
+		window.displayPictureInfo()
+	}
 	win.renderer.Present()
+
+	// Update the window title
+	win.setTitle(slide.current+1, len(slide.list), curImg().path)
 
 	// Preload and free images from the list
 	win.loadAndFreeAround()
-
-	/* TEST */
-	go func(path string) {
-		exif.Open(path)
-	}(curImg().path)
 }
 
 // Arrange that main.main runs on main thread.
@@ -214,7 +223,7 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 		logger.Warning("Unable to open font lib")
 	}
 
-	window.font, err = ttf.OpenFont("./app/OpenSans-Regular.ttf", 24)
+	window.font, err = ttf.OpenFont("./app/fonts/opensans.ttf", 12)
 	if err != nil {
 		logger.Warning("Unable to load font")
 	}
@@ -235,6 +244,7 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 		}
 	}
 
+	window.displayInfo = true
 	window.setTitle(slide.current+1, len(slide.list), curImg().path)
 	window.loadCurrentImage()
 
@@ -259,24 +269,36 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 				window.renderer.Clear()
 				window.renderer.Copy(curImg().texture, &src, &dst)
 				window.renderer.Present()
+
+				if window.displayInfo {
+					window.displayPictureInfo()
+					window.renderer.Present()
+				}
 			}
 
 		case *sdl.KeyDownEvent:
+
+			// Declare if the image needs to be updated
+			var update = false
 
 			// Get next or previous image
 			if t.Repeat == 0 {
 				if t.Keysym.Sym == sdl.K_LEFT {
 					slide.current = utils.Mod((slide.current - 1), len(slide.list))
+					update = true
 				} else if t.Keysym.Sym == sdl.K_RIGHT {
 					slide.current = utils.Mod((slide.current + 1), len(slide.list))
+					update = true
 				} else if t.Keysym.Sym == sdl.K_PAGEUP {
 					if err := picture.RotateImage(curImg().path, picture.CounterClockwise); err != nil {
 						logger.Warning(err.Error())
 					}
+					update = true
 				} else if t.Keysym.Sym == sdl.K_PAGEDOWN {
 					if err := picture.RotateImage(curImg().path, picture.Clockwise); err != nil {
 						logger.Warning(err.Error())
 					}
+					update = true
 				} else if t.Keysym.Sym == 102 { // F
 
 					if window.fullscreen {
@@ -287,7 +309,17 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 					}
 					window.fullscreen = !window.fullscreen
 				} else if t.Keysym.Sym == 105 { // I
-					// display image information
+
+					window.displayInfo = !window.displayInfo
+					if window.displayInfo {
+						fmt.Println("Toggle info: on")
+						window.displayPictureInfo()
+						window.renderer.Present()
+					} else {
+						fmt.Println("Toggle info: off")
+						update = true
+					}
+
 				} else if t.Keysym.Sym == sdl.K_ESCAPE {
 
 					if window.fullscreen {
@@ -300,8 +332,9 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 				}
 			}
 
-			window.setTitle(slide.current+1, len(slide.list), curImg().path)
-			window.loadCurrentImage()
+			if update {
+				window.loadCurrentImage()
+			}
 		}
 	}
 

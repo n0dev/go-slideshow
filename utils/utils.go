@@ -1,5 +1,12 @@
 package utils
 
+import (
+	"log"
+	"os"
+	"os/user"
+	"path/filepath"
+)
+
 // Mod is the function which always return the positive modulus
 func Mod(a int, b int) int {
 	rem := a % b
@@ -7,6 +14,25 @@ func Mod(a int, b int) int {
 		rem += b
 	}
 	return rem
+}
+
+// GetAppData returns the application folder for this application. Creates it
+// otherwise. Can return an error if the path has no write rights.
+func GetAppData() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Prepare the path
+	f := filepath.Join(usr.HomeDir, ".goslideshow")
+	_, err = os.Stat(f)
+	if os.IsNotExist(err) {
+		if err := os.Mkdir(f, 0711); err != nil {
+			return "", err
+		}
+	}
+	return f, nil
 }
 
 // StringInSlice returns true if the string a is in slice, else false

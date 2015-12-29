@@ -3,6 +3,9 @@ package logger
 import (
 	"log"
 	"os"
+	"path/filepath"
+
+	"github.com/n0dev/GoSlideshow/utils"
 )
 
 const (
@@ -19,8 +22,15 @@ var (
 
 // Create the logger file before everything
 func init() {
+
+	f, err := utils.GetAppData()
+	if err != nil {
+		log.Fatal(err)
+	}
+	logPath := filepath.Join(f, logName)
+
 	fileFlags := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
-	file, err := os.OpenFile(logName, fileFlags, 0666)
+	file, err := os.OpenFile(logPath, fileFlags, 0666)
 	if err != nil {
 		log.Fatalln("Failed to open log file", os.Stdout, ":", err)
 	}
