@@ -29,6 +29,7 @@ type winInfo struct {
 	window      *sdl.Window
 	renderer    *sdl.Renderer
 	font        *ttf.Font
+	symbols     *ttf.Font
 	fullscreen  bool
 	displayInfo bool
 }
@@ -112,6 +113,27 @@ func loadImg(win *winInfo, index int) {
 	}
 }
 
+func (win *winInfo) displayBar() {
+
+	message := "\uF04A \uF04B \uF04E \uF0E2 \uF01E"
+	black := sdl.Color{A: 0, B: 255, G: 255, R: 255}
+	white := sdl.Color{A: 0, B: 0, G: 0, R: 0}
+
+	if textSurface, err := win.symbols.RenderUTF8_Shaded(message, white, black); err == nil {
+		texture, err := win.renderer.CreateTextureFromSurface(textSurface)
+		if err != nil {
+			fmt.Println(err)
+		}
+		textSurface.Free()
+
+		width := int32(len(message) * 18)
+		win.renderer.Copy(texture, nil, &sdl.Rect{X: 120, Y: 500, W: width, H: 40})
+		texture.Destroy()
+	} else {
+		logger.Warning("OMG")
+	}
+}
+
 func resetImg(index int) {
 	if slide.list[index].texture != nil {
 		slide.list[index].texture.Destroy()
@@ -124,7 +146,8 @@ func (win *winInfo) loadAndFreeAround() {
 	p2 := utils.Mod(slide.current-1, len(slide.list))
 	n1 := utils.Mod(slide.current+1, len(slide.list))
 	n2 := utils.Mod(slide.current+2, len(slide.list))
-	refresh := utils.IntList{p1, p2, n1, n2}
+	n3 := utils.Mod(slide.current+3, len(slide.list))
+	refresh := utils.IntList{p1, p2, n1, n2, n3}
 
 	// preload the previous and next two images
 	for _, idx := range refresh {
@@ -141,7 +164,7 @@ func (win *winInfo) loadAndFreeAround() {
 	}
 }
 
-func (win *winInfo) loadCurrentImage() {
+func (win *winInfo) loadCurrentImage(render bool) {
 	var src, dst sdl.Rect
 
 	// load and display the current image
@@ -153,12 +176,15 @@ func (win *winInfo) loadCurrentImage() {
 	iw, ih := utils.ComputeFitImage(uint32(ww), uint32(wh), uint32(curImg().W), uint32(curImg().H))
 	dst = sdl.Rect{X: int32(ww/2 - int(iw)/2), Y: int32(wh/2 - int(ih)/2), W: int32(iw), H: int32(ih)}
 
-	win.renderer.Clear()
-	win.renderer.Copy(curImg().texture, &src, &dst)
-	if window.displayInfo {
-		window.displayPictureInfo()
+	if render {
+		win.renderer.Clear()
+		win.renderer.Copy(curImg().texture, &src, &dst)
+		if window.displayInfo {
+			window.displayPictureInfo()
+		}
+		//window.displayBar()
+		win.renderer.Present()
 	}
-	win.renderer.Present()
 
 	// Update the window title
 	win.setTitle(slide.current+1, len(slide.list), curImg().path)
@@ -214,18 +240,29 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 	}
 	defer window.window.Destroy()
 
-	if icon, err := sdl.LoadBMP("./app/icon.bmp"); err == nil {
-		window.window.SetIcon(icon)
-	}
-
 	// Load the font library
 	if err := ttf.Init(); err != nil {
 		logger.Warning("Unable to open font lib")
 	}
 
-	window.font, err = ttf.OpenFont("./app/fonts/opensans.ttf", 12)
-	if err != nil {
-		logger.Warning("Unable to load font")
+	// Load resources
+	if f, err := filepath.Abs(filepath.Dir(os.Args[0])); err == nil {
+		icon := filepath.Join(f, "app", "icon.bmp")
+		if i, err := sdl.LoadBMP(icon); err == nil {
+			window.window.SetIcon(i)
+		}
+
+		font := filepath.Join(f, "app", "fonts", "opensans.ttf")
+		window.font, err = ttf.OpenFont(font, 12)
+		if err != nil {
+			logger.Warning("Unable to load " + font)
+		}
+
+		font = filepath.Join(f, "app", "fonts", "fontawesome.ttf")
+		window.symbols, err = ttf.OpenFont(font, 24)
+		if err != nil {
+			logger.Warning("Unable to load " + font)
+		}
 	}
 
 	window.renderer, err = sdl.CreateRenderer(window.window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_TARGETTEXTURE)
@@ -246,7 +283,7 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 
 	window.displayInfo = true
 	window.setTitle(slide.current+1, len(slide.list), curImg().path)
-	window.loadCurrentImage()
+	window.loadCurrentImage(false)
 
 	running = true
 	for running {
@@ -254,6 +291,14 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 		switch t := event.(type) {
 		case *sdl.QuitEvent:
 			running = false
+
+		/*case *sdl.MouseMotionEvent:
+			fmt.Printf("[%d ms] MouseMotion\ttype:%d\tid:%d\tx:%d\ty:%d\txrel:%d\tyrel:%d\n",
+				t.Timestamp, t.Type, t.Which, t.X, t.Y, t.XRel, t.YRel)
+
+		case *sdl.MouseButtonEvent:
+			fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
+				t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)*/
 
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_RESIZED || t.Event == sdl.WINDOWEVENT_EXPOSED {
@@ -292,11 +337,15 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 				} else if t.Keysym.Sym == sdl.K_PAGEUP {
 					if err := picture.RotateImage(curImg().path, picture.CounterClockwise); err != nil {
 						logger.Warning(err.Error())
+					} else {
+						resetImg(slide.current)
 					}
 					update = true
 				} else if t.Keysym.Sym == sdl.K_PAGEDOWN {
 					if err := picture.RotateImage(curImg().path, picture.Clockwise); err != nil {
 						logger.Warning(err.Error())
+					} else {
+						resetImg(slide.current)
 					}
 					update = true
 				} else if t.Keysym.Sym == 102 { // F
@@ -333,7 +382,7 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 			}
 
 			if update {
-				window.loadCurrentImage()
+				window.loadCurrentImage(true)
 			}
 		}
 	}

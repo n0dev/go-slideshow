@@ -2,7 +2,7 @@
 
 ![Build Status](https://travis-ci.org/n0dev/GoSlideshow.svg?branch=master)
 
-Simple cross-platform (just tested on Linux yet) slideshow written in go.
+Simple cross-platform (just tested on Linux yet) slideshow for pictures written in go.
 
 **This is not ready for use yet.**
 
@@ -21,11 +21,12 @@ To install just follow the steps:
 Just run `goslideshow` indicating a file or a folder in parameter.
 
 
-| Keys          | Are                |
-| ------------- | ------------------ |
-| `🠊`           | Next picture       |
-| `🠈`           | Previous picture   |
-| `f`           | Toggle fullscreen  |
+| Keys          | Are                           |
+| ------------- | ----------------------------- |
+| `🠊`           | Next picture                  |
+| `🠈`           | Previous picture              |
+| `f`           | Toggle fullscreen             |
+| `i`           | Toggle information on picture |
 
 ### License
 
