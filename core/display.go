@@ -1,12 +1,15 @@
 package core
 
+//#include <stdlib.h>
+import "C"
+
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
+	"unsafe"
 
 	"github.com/n0dev/GoSlideshow/core/picture"
 	"github.com/n0dev/GoSlideshow/core/picture/exif"
@@ -41,26 +44,35 @@ type imgInfo struct {
 	texture *sdl.Texture
 }
 
-type slideshowInfo struct {
-	list    []imgInfo
-	current int
-}
-
-var slide slideshowInfo
-
 func curImg() *imgInfo {
 	return &slide.list[slide.current]
 }
 
-func (win *winInfo) addPicture(path string, f os.FileInfo, err error) error {
-	if utils.StringInSlice(strings.ToLower(filepath.Ext(path)), validExtensions) {
-		slide.list = append(slide.list, imgInfo{path, 0, 0, nil})
-	}
-	return nil
-}
-
 func (win *winInfo) setTitle(position int, total int, path string) {
 	win.window.SetTitle(winTitle + " - " + strconv.Itoa(position) + "/" + strconv.Itoa(total) + " - " + filepath.Base(path))
+}
+
+func (win *winInfo) displayLoading() {
+
+	white := sdl.Color{A: 0, B: 0, G: 0, R: 0}
+	black := sdl.Color{A: 0, B: 255, G: 255, R: 255}
+
+	if textSurface, err := win.font.RenderUTF8_Shaded("Loading...", black, white); err == nil {
+		texture, err := win.renderer.CreateTextureFromSurface(textSurface)
+		if err != nil {
+			fmt.Println(err)
+		}
+		textSurface.Free()
+
+		ww, wh := window.window.GetSize()
+		win.renderer.Copy(texture, nil, &sdl.Rect{X: int32(ww/2 - 50), Y: int32(wh/2 - 1), W: 100, H: 20})
+		texture.Destroy()
+
+		window.renderer.Present()
+
+	} else {
+		logger.Warning("OMG")
+	}
 }
 
 func (win *winInfo) displayPictureInfo() {
@@ -200,38 +212,13 @@ func init() {
 
 var window winInfo
 
-// Run to launch the app
-func Run(inputParam string, fullScreen bool, slideshow bool) int {
+// MainLoop initializes the SDL package and run the main loop
+func MainLoop(fullScreen bool, slideshow bool) int {
 	var event sdl.Event
 	var running bool
 	var src, dst sdl.Rect
 	var err error
 	var flags uint32 = sdl.WINDOW_SHOWN | sdl.WINDOW_RESIZABLE | sdl.WINDOW_ALLOW_HIGHDPI
-	var imagePath, folderPath string
-
-	if fileInfo, _ := os.Stat(inputParam); fileInfo.IsDir() {
-		folderPath, _ = filepath.Abs(inputParam)
-	} else {
-		folderPath, _ = filepath.Abs(filepath.Dir(inputParam))
-	}
-
-	// List all pictures in the corresponding folder
-	logger.Trace("Listing pictures in " + folderPath)
-	filepath.Walk(folderPath, window.addPicture)
-
-	if len(slide.list) != 0 {
-
-		fileInformation, _ := os.Stat(inputParam)
-		if fileInformation.IsDir() {
-			imagePath, _ = filepath.Abs(slide.list[0].path)
-		} else {
-			imagePath, _ = filepath.Abs(inputParam)
-		}
-
-	} else {
-		logger.Error("No pictures found")
-		return 1
-	}
 
 	window.window, err = sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, winDefaultHeight, winDefaultWidth, flags)
 	if err != nil {
@@ -272,16 +259,8 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 	}
 	defer window.renderer.Destroy()
 
-	// Positioning the current index in list
-	for i := range slide.list {
-		if slide.list[i].path != imagePath {
-			slide.current++
-		} else {
-			break
-		}
-	}
-
 	window.displayInfo = true
+	window.displayLoading()
 	window.setTitle(slide.current+1, len(slide.list), curImg().path)
 	window.loadCurrentImage(false)
 
@@ -291,6 +270,13 @@ func Run(inputParam string, fullScreen bool, slideshow bool) int {
 		switch t := event.(type) {
 		case *sdl.QuitEvent:
 			running = false
+
+		case *sdl.DropEvent:
+			p := (*C.char)(t.File)
+			s := C.GoString(p)
+			C.free(unsafe.Pointer(p))
+
+			sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_INFORMATION, "File dropped on window", s, window.window)
 
 		/*case *sdl.MouseMotionEvent:
 			fmt.Printf("[%d ms] MouseMotion\ttype:%d\tid:%d\tx:%d\ty:%d\txrel:%d\tyrel:%d\n",

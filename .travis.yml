@@ -12,4 +12,5 @@ install:
   - sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
   - go get golang.org/x/image/bmp
   - go get golang.org/x/image/tiff
+  - go get github.com/go-fsnotify/fsnotify
   - go get -v github.com/veandco/go-sdl2/sdl{,_ttf,_image}

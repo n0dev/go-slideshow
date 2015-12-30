@@ -2,44 +2,38 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/n0dev/GoSlideshow/core"
 	"github.com/n0dev/GoSlideshow/logger"
 )
 
-// Log usefull information
+var fullScreen *bool
+var isSlideshow *bool
+var recurse *bool
+
+// Starts the logger and parse the command line
 func init() {
 
 	if name, err := os.Getwd(); err == nil {
 		logger.Trace("Execution from " + name)
 	}
 
+	fullScreen = flag.Bool("f", false, "set in fullscreen mode")
+	isSlideshow = flag.Bool("s", false, "set auto slideshow")
+	recurse = flag.Bool("r", false, "scan pictures recursively in folders")
+	flag.Parse()
 }
 
 // App starts here
 func main() {
 
-	// Parse the command line
-	fullScreen := flag.Bool("fullscreen", false, "set in fullscreen mode")
-	isSlideshow := flag.Bool("slide", false, "set auto slideshow")
-	flag.Parse()
-
-	// Run only if the parameter is a valid file or directory
-	args := flag.Args()
-	if len(args) == 1 {
-
-		inputParam := args[0]
-
-		// Check wether it is a folder or a file
-		if _, err := os.Stat(inputParam); err != nil {
-			logger.Error(inputParam + " does not exist")
-		} else {
-			os.Exit(core.Run(inputParam, *fullScreen, *isSlideshow))
-		}
-
-	} else {
-		logger.Error("No file or directory given in argument")
+	// Folder and parameter scanning
+	if err := core.Scan(flag.Args(), recurse); err != nil {
+		fmt.Println(err)
 	}
-	os.Exit(1)
+
+	// Starts the main loop
+	core.MainLoop(*fullScreen, *isSlideshow)
 }
