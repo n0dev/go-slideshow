@@ -26,11 +26,13 @@ type slideshowInfo struct {
 var slide slideshowInfo
 
 // addPic checks if the picture has the right extension and adds it
-func addPic(p string) {
-	if utils.StringInSlice(strings.ToLower(filepath.Ext(p)), validExtensions) {
-		a, _ := filepath.Abs(p)
-		slide.list = append(slide.list, imgInfo{a, 0, 0, nil})
+func addPic(p string) error {
+	if !utils.StringInSlice(strings.ToLower(filepath.Ext(p)), validExtensions) {
+		return ErrNotCompatible
 	}
+	a, _ := filepath.Abs(p)
+	slide.list = append(slide.list, imgInfo{a, 0, 0, nil})
+	return nil
 }
 
 // addDir scans and add dir for pictures to slide

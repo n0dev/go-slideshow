@@ -215,7 +215,6 @@ var window winInfo
 // MainLoop initializes the SDL package and run the main loop
 func MainLoop(fullScreen bool, slideshow bool) int {
 	var event sdl.Event
-	var running bool
 	var src, dst sdl.Rect
 	var err error
 	var flags uint32 = sdl.WINDOW_SHOWN | sdl.WINDOW_RESIZABLE | sdl.WINDOW_ALLOW_HIGHDPI
@@ -264,7 +263,10 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 	window.setTitle(slide.current+1, len(slide.list), curImg().path)
 	window.loadCurrentImage(false)
 
-	running = true
+	// Declare if the image needs to be updated
+	var update = false
+	var running = true
+
 	for running {
 		event = sdl.WaitEvent()
 		switch t := event.(type) {
@@ -276,7 +278,24 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 			s := C.GoString(p)
 			C.free(unsafe.Pointer(p))
 
-			sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_INFORMATION, "File dropped on window", s, window.window)
+			// Check if picture already in list
+			found := false
+			for i := range slide.list {
+				if slide.list[i].path == s {
+					found = true
+					slide.current = i
+					update = true
+					break
+				}
+			}
+			if !found {
+				if err := addPic(s); err != nil {
+					sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_INFORMATION, "File dropped on window", "Cannot add "+s, window.window)
+				} else {
+					slide.current = len(slide.list) - 1
+					update = true
+				}
+			}
 
 		/*case *sdl.MouseMotionEvent:
 			fmt.Printf("[%d ms] MouseMotion\ttype:%d\tid:%d\tx:%d\ty:%d\txrel:%d\tyrel:%d\n",
@@ -308,9 +327,6 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 			}
 
 		case *sdl.KeyDownEvent:
-
-			// Declare if the image needs to be updated
-			var update = false
 
 			// Get next or previous image
 			if t.Repeat == 0 {
@@ -366,10 +382,10 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 					fmt.Printf("%d\n", t.Keysym.Sym)
 				}
 			}
-
-			if update {
-				window.loadCurrentImage(true)
-			}
+		}
+		if update {
+			window.loadCurrentImage(true)
+			update = false
 		}
 	}
 
