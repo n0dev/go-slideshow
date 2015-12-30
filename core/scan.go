@@ -10,7 +10,7 @@ import (
 	"github.com/n0dev/GoSlideshow/utils"
 )
 
-var validExtensions = []string{".bmp", ".jpg", ".png", ".gif", ".tif", ".tga"}
+var validExtensions = []string{".bmp", ".jpg", ".jpeg", ".png", ".gif", ".tif", ".tga"}
 
 // Various errors returned by Scan
 var (
@@ -71,7 +71,7 @@ func Scan(p []string, recurse *bool) error {
 			return err
 
 		} else if i.IsDir() {
-			baseDir, _ = filepath.Abs(input)
+			baseDir, _ = filepath.Abs(filepath.Clean(input))
 			addDir(baseDir, recurse)
 
 			// Quick check if picture has been found
@@ -82,16 +82,16 @@ func Scan(p []string, recurse *bool) error {
 			}
 
 		} else {
-			baseDir, _ = filepath.Abs(filepath.Dir(input))
+			fileAbs, _ := filepath.Abs(filepath.Clean(input))
+			baseDir, _ = filepath.Abs(filepath.Dir(fileAbs))
 			addDir(baseDir, recurse)
 
 			// Quick check if picture has been found
 			if len(slide.list) != 0 {
 				found := false
 				for i := range slide.list {
-					if slide.list[i].path != input {
-						slide.current++
-					} else {
+					if slide.list[i].path == fileAbs {
+						slide.current = i
 						found = true
 						break
 					}

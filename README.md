@@ -1,6 +1,7 @@
 # GoSlideshow
 
-![Build Status](https://travis-ci.org/n0dev/GoSlideshow.svg?branch=master)
+![Build Status](https://travis-ci.org/n0dev/GoSlideshow.svg?branch=master) 
+[![Coverage Status](https://coveralls.io/repos/n0dev/GoSlideshow/badge.svg?branch=master&service=github)](https://coveralls.io/github/n0dev/GoSlideshow?branch=master)
 
 Simple cross-platform (just tested on Linux yet) slideshow for pictures written in go.
 

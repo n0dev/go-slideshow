@@ -258,7 +258,7 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 	}
 	defer window.renderer.Destroy()
 
-	window.displayInfo = true
+	window.displayInfo = false
 	window.displayLoading()
 	window.setTitle(slide.current+1, len(slide.list), curImg().path)
 	window.loadCurrentImage(false)

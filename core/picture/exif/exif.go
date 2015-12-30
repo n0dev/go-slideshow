@@ -69,7 +69,7 @@ func extract(bo binary.ByteOrder, info []byte, data []byte, casio bool, prefix s
 	//fmt.Printf(hex.Dump(info))
 
 	if i == 34665 {
-		readIFD(bo, data, e, "SubIFD")
+		//readIFD(bo, data, e, "SubIFD")
 
 	} else if i == 34853 {
 		fmt.Println("-- GPS --")
@@ -98,34 +98,34 @@ func extract(bo binary.ByteOrder, info []byte, data []byte, casio bool, prefix s
 			} else {
 				value = strings.Trim(string(data[e:e+c]), " \r\n\x00")
 			}
-			fmt.Printf("[%s] %s (0x%x): %s\n", prefix, i.string(casio), i, value)
+			fmt.Printf("[%s] (0x%04x) %s: %s\n", prefix, i, i.string(casio), value)
 
 		case exifFormatShort:
 			value := toUint16(bo, []byte{info[8], info[9]})
-			fmt.Printf("[%s] %s (0x%x): %d\n", prefix, i.string(casio), i, value)
+			fmt.Printf("[%s] (0x%04x) %s: %d\n", prefix, i, i.string(casio), value)
 
 		case exifFormatLong:
-			fmt.Printf("[%s] %s (0x%x): %d\n", prefix, i.string(casio), i, toUint32(bo, info[8:12]))
+			fmt.Printf("[%s] (0x%04x) %s: %d\n", prefix, i, i.string(casio), toUint32(bo, info[8:12]))
 
 		case exifFormatSlong:
-			fmt.Printf("[%s] %s (0x%x): %d\n", prefix, i.string(casio), i, toInt32(bo, info[8:12]))
+			fmt.Printf("[%s] (0x%04x) %s: %d\n", prefix, i, i.string(casio), toInt32(bo, info[8:12]))
 
 		case exifFormatByte:
 			if uint32(t.size())*c <= 4 {
-				fmt.Printf("[%s] %s (0x%x): %x\n", prefix, i.string(casio), i, info[8:12])
+				fmt.Printf("[%s] (0x%04x) %s : %x\n", prefix, i, i.string(casio), info[8:12])
 			} else {
-				fmt.Printf("[%s] %s (0x%x): %x\n", prefix, i.string(casio), i, data[e:e+c])
+				fmt.Printf("[%s] (0x%04x) %s: %x\n", prefix, i, i.string(casio), data[e:e+c])
 			}
 
 		case exifFormatRational:
 			n := toUint32(bo, data[e:e+(c*4)])
 			d := toUint32(bo, data[e+(c*4):e+(c*8)])
-			fmt.Printf("[%s] %s (0x%x): %d/%d\n", prefix, i.string(casio), i, n, d)
+			fmt.Printf("[%s] (0x%04x) %s: %d/%d\n", prefix, i, i.string(casio), n, d)
 
 		case exifFormatSrational:
 			n := toInt32(bo, data[e:e+(c*4)])
 			d := toInt32(bo, data[e+(c*4):e+(c*8)])
-			fmt.Printf("[%s] %s (0x%x): %d/%d\n", prefix, i.string(casio), i, n, d)
+			fmt.Printf("[%s] (0x%04x) %s: %d/%d\n", prefix, i, i.string(casio), n, d)
 
 		case exifFormatUndefined:
 			var value string
@@ -134,11 +134,11 @@ func extract(bo binary.ByteOrder, info []byte, data []byte, casio bool, prefix s
 			} else {
 				value = strings.Trim(string(data[e:e+c]), " \r\n\x00")
 			}
-			fmt.Printf("[%s] %s (0x%x): %s\n", prefix, i.string(casio), i, value)
+			fmt.Printf("[%s] (0x%04x) %s: %s\n", prefix, i, i.string(casio), value)
 
 		default:
 			fmt.Printf(hex.Dump(info))
-			fmt.Printf("[%s] %s (0x%x): %s - %d at %d\n", prefix, i.string(casio), i, t.string(), c, e)
+			fmt.Printf("[%s]555 (0x%04x) %s: %s - %d at %d\n", prefix, i.string(casio), i, t.string(), c, e)
 		}
 	}
 }
@@ -165,7 +165,6 @@ func readIFD(bo binary.ByteOrder, data []byte, off uint32, prefix string) {
 	if err != nil {
 		fmt.Println("binary.Read failed:", err)
 	}
-	//fmt.Printf("Blocks: %d\n", n)
 
 	pos := off + 2
 	for i := 0; i < int(n); i++ {
@@ -194,8 +193,6 @@ func Read(reader *Reader) {
 		}
 
 		if bytes.Equal(buf, APP1) {
-			//fmt.Println("AAP1 Found!")
-
 			length := make([]byte, 2)
 			if _, err := reader.file.Read(length); err != nil {
 				fmt.Println(err)
