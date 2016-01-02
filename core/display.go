@@ -27,6 +27,11 @@ const (
 	winDefaultHeight = 800
 )
 
+var (
+	sdlColorWhite = sdl.Color{A: 0, B: 0, G: 0, R: 0}
+	sdlColorBlack = sdl.Color{A: 0, B: 255, G: 255, R: 255}
+)
+
 // Information about the display window
 type winInfo struct {
 	window      *sdl.Window
@@ -44,62 +49,50 @@ type imgInfo struct {
 	texture *sdl.Texture
 }
 
-func curImg() *imgInfo {
-	return &slide.list[slide.current]
-}
-
+// Change the title according to the inputs
 func (win *winInfo) setTitle(position int, total int, path string) {
 	win.window.SetTitle(winTitle + " - " + strconv.Itoa(position) + "/" + strconv.Itoa(total) + " - " + filepath.Base(path))
 }
 
-func (win *winInfo) displayLoading() {
+// Create the texture from text using TTF
+func (win *winInfo) renderText(text string) (*sdl.Texture, error) {
 
-	white := sdl.Color{A: 0, B: 0, G: 0, R: 0}
-	black := sdl.Color{A: 0, B: 255, G: 255, R: 255}
-
-	if textSurface, err := win.font.RenderUTF8_Shaded("Loading...", black, white); err == nil {
-		texture, err := win.renderer.CreateTextureFromSurface(textSurface)
-		if err != nil {
-			fmt.Println(err)
-		}
-		textSurface.Free()
-
-		ww, wh := window.window.GetSize()
-		win.renderer.Copy(texture, nil, &sdl.Rect{X: int32(ww/2 - 50), Y: int32(wh/2 - 1), W: 100, H: 20})
-		texture.Destroy()
-
-		window.renderer.Present()
-
-	} else {
-		logger.Warning("OMG")
+	surface, err := win.font.RenderUTF8_Shaded(text, sdlColorBlack, sdlColorWhite)
+	defer surface.Free()
+	if err != nil {
+		return nil, err
 	}
+
+	texture, err := win.renderer.CreateTextureFromSurface(surface)
+	if err != nil {
+		return nil, err
+	}
+
+	return texture, nil
 }
 
-func (win *winInfo) displayPictureInfo() {
+// displayLoading display loading on background
+func (win *winInfo) displayLoading() {
+	texture, _ := win.renderText("Loading...")
+	ww, wh := win.window.GetSize()
+	win.renderer.Copy(texture, nil, &sdl.Rect{X: int32(ww/2 - 50), Y: int32(wh/2 - 1), W: 65, H: 20})
+	texture.Destroy()
+	win.renderer.Present()
+}
 
-	message := filepath.Base(curImg().path)
+// displayPictureInfo display all information about the picture
+func (win *winInfo) displayPictureInfo() {
 
 	/* Display exif information */
 	go func(path string) {
 		exif.Open(path)
 	}(curImg().path)
 
-	black := sdl.Color{A: 0, B: 255, G: 255, R: 255}
-	white := sdl.Color{A: 0, B: 0, G: 0, R: 0}
-
-	if textSurface, err := win.font.RenderUTF8_Shaded(message, black, white); err == nil {
-		texture, err := win.renderer.CreateTextureFromSurface(textSurface)
-		if err != nil {
-			fmt.Println(err)
-		}
-		textSurface.Free()
-
-		width := int32(len(message) * 8)
-		win.renderer.Copy(texture, nil, &sdl.Rect{X: 2, Y: 2, W: width, H: 16})
-		texture.Destroy()
-	} else {
-		logger.Warning("OMG")
-	}
+	msg := filepath.Base(curImg().path)
+	texture, _ := win.renderText(msg)
+	width := int32(len(msg) * 8)
+	win.renderer.Copy(texture, nil, &sdl.Rect{X: 2, Y: 2, W: width, H: 20})
+	texture.Destroy()
 }
 
 func loadImg(win *winInfo, index int) {
@@ -128,15 +121,14 @@ func loadImg(win *winInfo, index int) {
 func (win *winInfo) displayBar() {
 
 	message := "\uF04A \uF04B \uF04E \uF0E2 \uF01E"
-	black := sdl.Color{A: 0, B: 255, G: 255, R: 255}
-	white := sdl.Color{A: 0, B: 0, G: 0, R: 0}
+	surface, err := win.symbols.RenderUTF8_Shaded(message, sdlColorWhite, sdlColorBlack)
 
-	if textSurface, err := win.symbols.RenderUTF8_Shaded(message, white, black); err == nil {
-		texture, err := win.renderer.CreateTextureFromSurface(textSurface)
+	if err == nil {
+		texture, err := win.renderer.CreateTextureFromSurface(surface)
 		if err != nil {
 			fmt.Println(err)
 		}
-		textSurface.Free()
+		surface.Free()
 
 		width := int32(len(message) * 18)
 		win.renderer.Copy(texture, nil, &sdl.Rect{X: 120, Y: 500, W: width, H: 40})
@@ -207,7 +199,13 @@ func (win *winInfo) loadCurrentImage(render bool) {
 
 // Arrange that main.main runs on main thread.
 func init() {
+
 	runtime.LockOSThread()
+
+	// Video only
+	if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
+		logger.Warning(err.Error())
+	}
 }
 
 var window winInfo
@@ -219,17 +217,17 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 	var err error
 	var flags uint32 = sdl.WINDOW_SHOWN | sdl.WINDOW_RESIZABLE | sdl.WINDOW_ALLOW_HIGHDPI
 
+	// Load the font library
+	if err := ttf.Init(); err != nil {
+		logger.Warning("Unable to open font lib")
+	}
+
 	window.window, err = sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, winDefaultHeight, winDefaultWidth, flags)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
 		return 1
 	}
 	defer window.window.Destroy()
-
-	// Load the font library
-	if err := ttf.Init(); err != nil {
-		logger.Warning("Unable to open font lib")
-	}
 
 	// Load resources
 	if f, err := filepath.Abs(filepath.Dir(os.Args[0])); err == nil {
@@ -239,19 +237,20 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 		}
 
 		font := filepath.Join(f, "app", "fonts", "opensans.ttf")
-		window.font, err = ttf.OpenFont(font, 12)
+		window.font, err = ttf.OpenFont(font, 14)
 		if err != nil {
 			logger.Warning("Unable to load " + font)
 		}
+		window.font.SetKerning(false)
 
 		font = filepath.Join(f, "app", "fonts", "fontawesome.ttf")
-		window.symbols, err = ttf.OpenFont(font, 24)
+		window.symbols, err = ttf.OpenFont(font, 64)
 		if err != nil {
 			logger.Warning("Unable to load " + font)
 		}
 	}
 
-	window.renderer, err = sdl.CreateRenderer(window.window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_TARGETTEXTURE)
+	window.renderer, err = sdl.CreateRenderer(window.window, -1, sdl.RENDERER_ACCELERATED)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
 		return 2

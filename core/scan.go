@@ -10,7 +10,15 @@ import (
 	"github.com/n0dev/GoSlideshow/utils"
 )
 
-var validExtensions = []string{".bmp", ".jpg", ".jpeg", ".png", ".gif", ".tif", ".tga"}
+var validExtensions = []string{
+	".bmp",
+	".jpg",
+	".jpeg",
+	".png",
+	".gif",
+	".tif",
+	".tga",
+}
 
 // Various errors returned by Scan
 var (
@@ -24,6 +32,11 @@ type slideshowInfo struct {
 }
 
 var slide slideshowInfo
+
+// Alias to return the image currently displayed
+func curImg() *imgInfo {
+	return &slide.list[slide.current]
+}
 
 // addPic checks if the picture has the right extension and adds it
 func addPic(p string) error {
