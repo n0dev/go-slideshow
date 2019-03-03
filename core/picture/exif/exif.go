@@ -138,7 +138,7 @@ func extract(bo binary.ByteOrder, info []byte, data []byte, casio bool, prefix s
 
 		default:
 			fmt.Printf(hex.Dump(info))
-			fmt.Printf("[%s]555 (0x%04x) %s: %s - %d at %d\n", prefix, i.string(casio), i, t.string(), c, e)
+			fmt.Printf("[%s]555 (0x%04x) %d: %s - %d at %d\n", prefix, i.string(casio), i, t.string(), c, e)
 		}
 	}
 }
