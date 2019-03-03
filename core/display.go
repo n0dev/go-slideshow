@@ -9,16 +9,15 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"unsafe"
 
-	"github.com/n0dev/GoSlideshow/core/picture"
-	"github.com/n0dev/GoSlideshow/core/picture/exif"
-	"github.com/n0dev/GoSlideshow/logger"
-	"github.com/n0dev/GoSlideshow/utils"
+	"github.com/n0dev/go-slideshow/core/picture"
+	"github.com/n0dev/go-slideshow/core/picture/exif"
+	"github.com/n0dev/go-slideshow/logger"
+	"github.com/n0dev/go-slideshow/utils"
 
+	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/sdl_image"
-	"github.com/veandco/go-sdl2/sdl_ttf"
+	"github.com/veandco/go-sdl2/ttf"
 )
 
 const (
@@ -56,8 +55,7 @@ func (win *winInfo) setTitle(position int, total int, path string) {
 
 // Create the texture from text using TTF
 func (win *winInfo) renderText(text string) (*sdl.Texture, error) {
-
-	surface, err := win.font.RenderUTF8_Shaded(text, sdlColorBlack, sdlColorWhite)
+	surface, err := win.font.RenderUTF8Shaded(text, sdlColorBlack, sdlColorWhite)
 	defer surface.Free()
 	if err != nil {
 		return nil, err
@@ -121,7 +119,7 @@ func loadImg(win *winInfo, index int) {
 func (win *winInfo) displayBar() {
 
 	message := "\uF04A \uF04B \uF04E \uF0E2 \uF01E"
-	surface, err := win.symbols.RenderUTF8_Shaded(message, sdlColorWhite, sdlColorBlack)
+	surface, err := win.symbols.RenderUTF8Shaded(message, sdlColorWhite, sdlColorBlack)
 
 	if err == nil {
 		texture, err := win.renderer.CreateTextureFromSurface(surface)
@@ -178,7 +176,7 @@ func (win *winInfo) loadCurrentImage(render bool) {
 	ww, wh := win.window.GetSize()
 	src = sdl.Rect{X: 0, Y: 0, W: curImg().W, H: curImg().H}
 	iw, ih := utils.ComputeFitImage(uint32(ww), uint32(wh), uint32(curImg().W), uint32(curImg().H))
-	dst = sdl.Rect{X: int32(ww/2 - int(iw)/2), Y: int32(wh/2 - int(ih)/2), W: int32(iw), H: int32(ih)}
+	dst = sdl.Rect{X: int32(ww/2 - int32(iw)/2), Y: int32(wh/2 - int32(ih)/2), W: int32(iw), H: int32(ih)}
 
 	if render {
 		win.renderer.Clear()
@@ -273,14 +271,12 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 			running = false
 
 		case *sdl.DropEvent:
-			p := (*C.char)(t.File)
-			s := C.GoString(p)
-			C.free(unsafe.Pointer(p))
+			fileName := t.File
 
 			// Check if picture already in list
 			found := false
 			for i := range slide.list {
-				if slide.list[i].path == s {
+				if slide.list[i].path == fileName {
 					found = true
 					slide.current = i
 					update = true
@@ -288,8 +284,8 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 				}
 			}
 			if !found {
-				if err := addPic(s); err != nil {
-					sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_INFORMATION, "File dropped on window", "Cannot add "+s, window.window)
+				if err := addPic(fileName); err != nil {
+					sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_INFORMATION, "File dropped on window", "Cannot add "+fileName, window.window)
 				} else {
 					slide.current = len(slide.list) - 1
 					update = true
@@ -306,14 +302,14 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_RESIZED || t.Event == sdl.WINDOWEVENT_EXPOSED {
-				window.window.SetSize(int(t.Data1), int(t.Data2))
+				window.window.SetSize(t.Data1, t.Data2)
 
 				// Display information of the image
 				wWidth, wHeight := window.window.GetSize()
 
 				src = sdl.Rect{X: 0, Y: 0, W: curImg().W, H: curImg().H}
 				fitWidth, fitHeight := utils.ComputeFitImage(uint32(wWidth), uint32(wHeight), uint32(curImg().W), uint32(curImg().H))
-				dst = sdl.Rect{X: int32(wWidth/2 - int(fitWidth)/2), Y: int32(wHeight/2 - int(fitHeight)/2), W: int32(fitWidth), H: int32(fitHeight)}
+				dst = sdl.Rect{X: int32(wWidth/2 - int32(fitWidth)/2), Y: int32(wHeight/2 - int32(fitHeight)/2), W: int32(fitWidth), H: int32(fitHeight)}
 
 				window.renderer.Clear()
 				window.renderer.Copy(curImg().texture, &src, &dst)
@@ -325,7 +321,11 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 				}
 			}
 
-		case *sdl.KeyDownEvent:
+		case *sdl.KeyboardEvent:
+
+			if t.GetType() != sdl.KEYDOWN {
+				break
+			}
 
 			// Get next or previous image
 			if t.Repeat == 0 {
@@ -382,6 +382,7 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 				}
 			}
 		}
+
 		if update {
 			window.loadCurrentImage(true)
 			update = false

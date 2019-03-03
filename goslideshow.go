@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/n0dev/GoSlideshow/core"
-	"github.com/n0dev/GoSlideshow/logger"
+	"github.com/n0dev/go-slideshow/core"
+	"github.com/n0dev/go-slideshow/logger"
 )
 
 var fullScreen *bool
@@ -32,6 +32,7 @@ func main() {
 	// Folder and parameter scanning
 	if err := core.Scan(flag.Args(), recurse); err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	// Starts the main loop

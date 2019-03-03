@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/n0dev/GoSlideshow/utils"
+	"github.com/n0dev/go-slideshow/utils"
 )
 
 const (

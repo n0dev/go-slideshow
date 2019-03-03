@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/n0dev/GoSlideshow/utils"
+	"github.com/n0dev/go-slideshow/utils"
 )
 
 var validExtensions = []string{

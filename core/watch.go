@@ -3,8 +3,8 @@ package core
 import (
 	"log"
 
-	"github.com/go-fsnotify/fsnotify"
-	"github.com/n0dev/GoSlideshow/logger"
+	"github.com/fsnotify/fsnotify"
+	"github.com/n0dev/go-slideshow/logger"
 )
 
 // watch is notified on modification on dir path
