@@ -27,11 +27,9 @@ make build
 
 ## Usage
 
-```text
 | Keys       | Com                                 |
 | ---------- | ----------------------------------- |
 | →          | Next picture                        |
 | ←          | Previous picture                    |
 | f          | Toggle fullscreen                   |
 | i          | Toggle information on picture       |
-```
