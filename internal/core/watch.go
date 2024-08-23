@@ -4,7 +4,8 @@ import (
 	"log"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/n0dev/go-slideshow/logger"
+
+	"go-slideshow/internal/logger"
 )
 
 // watch is notified on modification on dir path

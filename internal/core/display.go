@@ -10,10 +10,10 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/n0dev/go-slideshow/core/picture"
-	"github.com/n0dev/go-slideshow/core/picture/exif"
-	"github.com/n0dev/go-slideshow/logger"
-	"github.com/n0dev/go-slideshow/utils"
+	"go-slideshow/internal/logger"
+	"go-slideshow/internal/picture"
+	"go-slideshow/internal/picture/exif"
+	"go-slideshow/internal/utils"
 
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
@@ -229,19 +229,19 @@ func MainLoop(fullScreen bool, slideshow bool) int {
 
 	// Load resources
 	if f, err := filepath.Abs(filepath.Dir(os.Args[0])); err == nil {
-		icon := filepath.Join(f, "app", "icon.bmp")
+		icon := filepath.Join(f, "icon.bmp")
 		if i, err := sdl.LoadBMP(icon); err == nil {
 			window.window.SetIcon(i)
 		}
 
-		font := filepath.Join(f, "app", "fonts", "opensans.ttf")
+		font := filepath.Join(f, "fonts", "opensans.ttf")
 		window.font, err = ttf.OpenFont(font, 14)
 		if err != nil {
 			logger.Warning("Unable to load " + font)
 		}
 		window.font.SetKerning(false)
 
-		font = filepath.Join(f, "app", "fonts", "fontawesome.ttf")
+		font = filepath.Join(f, "fonts", "fontawesome.ttf")
 		window.symbols, err = ttf.OpenFont(font, 64)
 		if err != nil {
 			logger.Warning("Unable to load " + font)

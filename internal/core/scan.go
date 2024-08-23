@@ -2,12 +2,11 @@ package core
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/n0dev/go-slideshow/utils"
+	"go-slideshow/internal/utils"
 )
 
 var validExtensions = []string{
@@ -58,7 +57,7 @@ func addDir(p string, recurse *bool) {
 		})
 
 	} else {
-		if files, err := ioutil.ReadDir(p); err == nil {
+		if files, err := os.ReadDir(p); err == nil {
 			for _, img := range files {
 				addPic(filepath.Join(p, img.Name()))
 			}

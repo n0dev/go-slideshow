@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/n0dev/go-slideshow/core"
-	"github.com/n0dev/go-slideshow/logger"
+	"go-slideshow/internal/core"
+	"go-slideshow/internal/logger"
 )
 
 var fullScreen *bool

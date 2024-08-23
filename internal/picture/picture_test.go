@@ -1,7 +1,7 @@
 package picture
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -15,7 +15,7 @@ const (
 )
 
 func TestOpenBMP(t *testing.T) {
-	files, _ := ioutil.ReadDir(bmpPath)
+	files, _ := os.ReadDir(bmpPath)
 	for _, f := range files {
 		file, _ := filepath.Abs(filepath.Join(bmpPath, f.Name()))
 		if _, err := Open(file); err != nil {
@@ -25,7 +25,7 @@ func TestOpenBMP(t *testing.T) {
 }
 
 func TestOpenPNG(t *testing.T) {
-	files, _ := ioutil.ReadDir(pngPath)
+	files, _ := os.ReadDir(pngPath)
 	for _, f := range files {
 		file, _ := filepath.Abs(filepath.Join(pngPath, f.Name()))
 		if _, err := Open(file); err != nil {
@@ -35,7 +35,7 @@ func TestOpenPNG(t *testing.T) {
 }
 
 func TestOpenGIF(t *testing.T) {
-	files, _ := ioutil.ReadDir(gifPath)
+	files, _ := os.ReadDir(gifPath)
 	for _, f := range files {
 		file, _ := filepath.Abs(filepath.Join(gifPath, f.Name()))
 		if _, err := Open(file); err != nil {
@@ -46,7 +46,7 @@ func TestOpenGIF(t *testing.T) {
 }
 
 func TestOpenJPEG(t *testing.T) {
-	files, _ := ioutil.ReadDir(jpegPath)
+	files, _ := os.ReadDir(jpegPath)
 	for _, f := range files {
 		file, _ := filepath.Abs(filepath.Join(jpegPath, f.Name()))
 		if _, err := Open(file); err != nil {
@@ -56,7 +56,7 @@ func TestOpenJPEG(t *testing.T) {
 }
 
 func TestOpenTIFF(t *testing.T) {
-	files, _ := ioutil.ReadDir(tiffPath)
+	files, _ := os.ReadDir(tiffPath)
 	for _, f := range files {
 		file, _ := filepath.Abs(filepath.Join(tiffPath, f.Name()))
 		if _, err := Open(file); err != nil {
