@@ -205,7 +205,7 @@ func Read(reader *Reader) {
 			if err != nil {
 				fmt.Println("binary.Read failed:", err)
 			}
-			//fmt.Printf("Size: %d\n", l)
+			fmt.Printf("Size: %d\n", l)
 
 			exifTag := make([]byte, 6)
 			if _, err := reader.file.Read(exifTag); err != nil {

@@ -44,10 +44,10 @@ func Open(imagePath string) (*Picture, error) {
 
 	// Opens the image given in path or fails
 	fImg, err := os.Open(imagePath)
-	defer fImg.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer fImg.Close()
 
 	// Decodes the images, rotates if succedded
 	src, format, err := image.Decode(fImg)
@@ -69,10 +69,10 @@ func (pic *Picture) Save(img *image.Image) error {
 
 	// Create desination
 	f, err := os.Create(pic.path)
-	defer f.Close()
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	switch pic.format {
 	case JPEG:
